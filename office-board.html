@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Batten Office">
+<title>Batten Office Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F2EC;
+    --card-bg: #FEFCF8;
+    --card-in: #1A3A2A;
+    --accent: #2E6B4A;
+    --accent-light: #D4EBE0;
+    --text: #1C1C1C;
+    --muted: #8A8680;
+    --border: #E0DDD6;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-in: 0 2px 12px rgba(30,80,55,0.18);
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 28px 24px 0;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+  }
+
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+
+  .date-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-top: 3px;
+    white-space: nowrap;
+  }
+
+  .subhead { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+
+  .reset-note {
+    font-size: 11.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+    margin-top: 8px;
+  }
+
+  .reset-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    display: inline-block;
+  }
+
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .count-badge.zero { background: var(--border); color: var(--muted); }
+
+  .grid {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .person-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: var(--shadow);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .person-card.in-office {
+    background: var(--card-in);
+    border-color: var(--card-in);
+    box-shadow: var(--shadow-in);
+    transform: scale(1.01);
+  }
+
+  .person-card:active { transform: scale(0.98); }
+
+  .avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all 0.22s ease;
+    letter-spacing: -0.5px;
+  }
+
+  .person-card.in-office .avatar { background: rgba(255,255,255,0.15); color: #fff; }
+
+  .person-info { flex: 1; min-width: 0; }
+
+  .person-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    transition: color 0.22s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .person-card.in-office .person-name { color: #fff; }
+
+  .person-status {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 1px;
+    transition: color 0.22s;
+  }
+
+  .person-card.in-office .person-status { color: rgba(255,255,255,0.55); }
+
+  .toggle-track {
+    width: 42px; height: 24px;
+    border-radius: 12px;
+    background: var(--border);
+    position: relative;
+    transition: background 0.22s ease;
+    flex-shrink: 0;
+  }
+
+  .person-card.in-office .toggle-track { background: rgba(255,255,255,0.25); }
+
+  .toggle-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 3px; left: 3px;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+
+  .person-card.in-office .toggle-thumb { transform: translateX(18px); }
+
+  /* Add person */
+  .add-panel {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px 16px;
+  }
+
+  .add-btn {
+    width: 100%;
+    border: 1.5px dashed var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.18s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  .add-form {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+
+  .add-form.visible { display: flex; }
+
+  .add-form input {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.18s;
+  }
+
+  .add-form input:focus { border-color: var(--accent); }
+
+  .add-form-row { display: flex; gap: 8px; }
+
+  .btn-save {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; flex: 1;
+  }
+
+  .btn-cancel {
+    background: var(--border); color: var(--muted);
+    border: none; border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; cursor: pointer;
+  }
+
+  /* Notification banner */
+  .notif-banner {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px 16px;
+  }
+
+  .notif-card {
+    background: var(--accent-light);
+    border: 1.5px solid rgba(46,107,74,0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--accent);
+  }
+
+  .notif-icon { font-size: 18px; }
+  .notif-text { flex: 1; font-weight: 500; }
+  .notif-sub { font-size: 11px; color: rgba(46,107,74,0.7); font-weight: 400; }
+
+  .notif-action {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    white-space: nowrap;
+  }
+
+  .notif-action:disabled { background: var(--muted); cursor: default; }
+
+  /* Loading state */
+  .loading-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    opacity: 0.5;
+  }
+
+  .skeleton {
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--border) 25%, #eae7e0 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+  }
+
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(245,242,236,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 14px 24px 24px;
+  }
+
+  .footer-inner {
+    max-width: 480px;
+    margin: 0 auto;
+    font-size: 11.5px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .live-dot::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4CAF7A;
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+
+  .live-dot.offline::before { background: #ccc; animation: none; }
+
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>Batten Office Board</h1>
+    <span class="date-pill" id="datePill">—</span>
+  </div>
+  <p class="subhead">Who's in today?</p>
+  <div id="countBadge" class="count-badge zero">Loading…</div>
+  <div class="reset-note">
+    <span class="reset-dot"></span>
+    <span id="resetCountdown">Resets at midnight</span>
+  </div>
+</header>
+
+<div class="notif-banner" id="notifBanner" style="display:none">
+  <div class="notif-card">
+    <span class="notif-icon">🔔</span>
+    <div class="notif-text">
+      Morning reminders
+      <div class="notif-sub">Get a nudge Mon–Fri at 8:30am</div>
+    </div>
+    <button class="notif-action" id="notifBtn" onclick="requestNotifications()">Enable</button>
+  </div>
+</div>
+
+<div class="grid" id="grid">
+  <!-- skeleton while loading -->
+  <div class="loading-card">
+    <div class="skeleton" style="width:44px;height:44px;border-radius:50%"></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <div class="skeleton" style="height:14px;width:120px"></div>
+      <div class="skeleton" style="height:11px;width:70px"></div>
+    </div>
+  </div>
+  <div class="loading-card">
+    <div class="skeleton" style="width:44px;height:44px;border-radius:50%"></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <div class="skeleton" style="height:14px;width:100px"></div>
+      <div class="skeleton" style="height:11px;width:60px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="add-panel">
+  <button class="add-btn" id="addBtn" onclick="showAddForm()">
+    <span>＋</span> Add a person
+  </button>
+  <div class="add-form" id="addForm">
+    <input type="text" id="nameInput" placeholder="Full name" maxlength="40" />
+    <input type="text" id="roleInput" placeholder="Role (optional, e.g. Faculty)" maxlength="40" />
+    <div class="add-form-row">
+      <button class="btn-cancel" onclick="hideAddForm()">Cancel</button>
+      <button class="btn-save" onclick="savePerson()">Add to board</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <span class="live-dot" id="liveDot">Live</span>
+    <span id="lastSync">Connecting…</span>
+    <span style="cursor:pointer;text-decoration:underline" onclick="toggleRemoveMode()" id="manageBtn">Manage</span>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get, runTransaction }
+  from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+// ── Firebase config ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCDdcYfMXE019dvYiunHYcoZATo_WCeevc",
+  authDomain: "office-dashboard-7c236.firebaseapp.com",
+  databaseURL: "https://office-dashboard-7c236-default-rtdb.firebaseio.com",
+  projectId: "office-dashboard-7c236",
+  storageBucket: "office-dashboard-7c236.firebasestorage.app",
+  messagingSenderId: "688869442949",
+  appId: "1:688869442949:web:42ba0bf3c39a1de82230ec"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let people = [];       // [{ id, name, role, inOffice }]
+let removeMode = false;
+
+// ── Firebase paths ───────────────────────────────────────────────────────────
+const peopleRef    = ref(db, 'people');
+const presenceRef  = ref(db, `presence/${todayKey()}`);
+
+// ── Daily reset logic ─────────────────────────────────────────────────────────
+// We store presence keyed by date. Old dates are simply never read.
+// On first write of a new day, presence for that day starts empty (all false).
+
+// ── Bootstrap default people if DB is empty ───────────────────────────────────
+async function maybeBootstrap() {
+  const snap = await get(peopleRef);
+  if (!snap.exists()) {
+    await set(peopleRef, {
+      'person-1': { name: 'Sebastian', role: 'Faculty', order: 0 }
+    });
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const grid = document.getElementById('grid');
+  const inCount = people.filter(p => p.inOffice).length;
+
+  const badge = document.getElementById('countBadge');
+  if (inCount === 0) {
+    badge.textContent = 'Nobody in yet';
+    badge.className = 'count-badge zero';
+  } else {
+    badge.textContent = inCount === 1 ? '1 person in office' : `${inCount} people in office`;
+    badge.className = 'count-badge';
+  }
+
+  const sorted = [...people].sort((a, b) => {
+    if (a.inOffice !== b.inOffice) return a.inOffice ? -1 : 1;
+    return (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name);
+  });
+
+  if (sorted.length === 0) {
+    grid.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">
+      No one on the board yet.<br>Add the first person below.
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = sorted.map(p => {
+    const initials = p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const statusText = p.inOffice ? 'In office ✓' : (p.role || 'Not in yet');
+    return `
+      <div class="person-card ${p.inOffice ? 'in-office' : ''}"
+           onclick="${removeMode ? `window._remove('${p.id}')` : `window._toggle('${p.id}')`}">
+        <div class="avatar">${initials}</div>
+        <div class="person-info">
+          <div class="person-name">${removeMode ? '🗑 ' : ''}${escHtml(p.name)}</div>
+          <div class="person-status">${escHtml(statusText)}</div>
+        </div>
+        ${removeMode ? '' : `
+        <div class="toggle-track">
+          <div class="toggle-thumb"></div>
+        </div>`}
+      </div>`;
+  }).join('');
+
+  // Update last-sync
+  const now = new Date();
+  document.getElementById('lastSync').textContent =
+    `Updated ${now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`;
+}
+
+// ── Toggle presence ───────────────────────────────────────────────────────────
+window._toggle = async (id) => {
+  const person = people.find(p => p.id === id);
+  if (!person) return;
+  const newVal = !person.inOffice;
+  // Optimistic UI
+  person.inOffice = newVal;
+  render();
+  // Write to Firebase
+  const personPresenceRef = ref(db, `presence/${todayKey()}/${id}`);
+  await set(personPresenceRef, newVal);
+};
+
+// ── Remove person ─────────────────────────────────────────────────────────────
+window._remove = async (id) => {
+  const person = people.find(p => p.id === id);
+  if (!person) return;
+  if (!confirm(`Remove ${person.name} from the board?`)) return;
+  await set(ref(db, `people/${id}`), null);
+  await set(ref(db, `presence/${todayKey()}/${id}`), null);
+};
+
+// ── Add person ────────────────────────────────────────────────────────────────
+window.showAddForm = () => {
+  document.getElementById('addBtn').style.display = 'none';
+  document.getElementById('addForm').classList.add('visible');
+  document.getElementById('nameInput').focus();
+};
+
+window.hideAddForm = () => {
+  document.getElementById('addBtn').style.display = 'flex';
+  document.getElementById('addForm').classList.remove('visible');
+  document.getElementById('nameInput').value = '';
+  document.getElementById('roleInput').value = '';
+};
+
+window.savePerson = async () => {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) return;
+  const role = document.getElementById('roleInput').value.trim();
+  const id = 'person-' + Date.now();
+  await set(ref(db, `people/${id}`), { name, role, order: Date.now() });
+  window.hideAddForm();
+};
+
+// ── Manage (remove) mode ──────────────────────────────────────────────────────
+window.toggleRemoveMode = () => {
+  removeMode = !removeMode;
+  document.getElementById('manageBtn').textContent = removeMode ? 'Done' : 'Manage';
+  render();
+};
+
+// ── Real-time listeners ───────────────────────────────────────────────────────
+function startListeners() {
+  // Listen to people list
+  onValue(peopleRef, (snap) => {
+    const peopleData = snap.val() || {};
+    // Merge with today's presence
+    const presenceSnap = currentPresence;
+    people = Object.entries(peopleData).map(([id, data]) => ({
+      id,
+      name: data.name,
+      role: data.role || '',
+      order: data.order || 0,
+      inOffice: presenceSnap[id] === true
+    }));
+    render();
+    document.getElementById('liveDot').className = 'live-dot';
+    document.getElementById('lastSync').textContent =
+      `Updated ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`;
+  }, (err) => {
+    console.error(err);
+    document.getElementById('liveDot').className = 'live-dot offline';
+    document.getElementById('lastSync').textContent = 'Connection error';
+  });
+
+  // Listen to today's presence
+  onValue(presenceRef, (snap) => {
+    currentPresence = snap.val() || {};
+    // Update inOffice on existing people array
+    people = people.map(p => ({ ...p, inOffice: currentPresence[p.id] === true }));
+    render();
+  });
+}
+
+let currentPresence = {};
+
+// ── Date pill & countdown ─────────────────────────────────────────────────────
+function updateDatePill() {
+  const opts = { weekday:'short', month:'short', day:'numeric' };
+  document.getElementById('datePill').textContent =
+    new Date().toLocaleDateString('en-US', opts);
+}
+
+function updateCountdown() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight - now;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  document.getElementById('resetCountdown').textContent = `Resets in ${h}h ${m}m`;
+}
+
+// ── Notifications (Mon–Fri 8:30am) ────────────────────────────────────────────
+function initNotifications() {
+  if (!('Notification' in window)) return;
+  const banner = document.getElementById('notifBanner');
+  if (Notification.permission === 'default') {
+    banner.style.display = 'block';
+  } else if (Notification.permission === 'granted') {
+    startNotifScheduler();
+  }
+}
+
+window.requestNotifications = async () => {
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('notifBanner').style.display = 'none';
+    startNotifScheduler();
+  }
+};
+
+function startNotifScheduler() {
+  checkAndFireNotif();
+  setInterval(checkAndFireNotif, 60_000);
+}
+
+function checkAndFireNotif() {
+  if (Notification.permission !== 'granted') return;
+  const now = new Date();
+  const day = now.getDay();
+  if (day === 0 || day === 6) return; // weekends
+  if (now.getHours() !== 8 || now.getMinutes() !== 30) return;
+  const firedKey = 'batten_notif_fired_' + todayKey();
+  if (localStorage.getItem(firedKey)) return;
+  localStorage.setItem(firedKey, '1');
+  const inCount = people.filter(p => p.inOffice).length;
+  const body = inCount === 0
+    ? 'Nobody marked in yet — are you heading in today?'
+    : `${inCount} ${inCount === 1 ? 'person is' : 'people are'} in so far. Coming in?`;
+  new Notification('Batten Office Board', {
+    body,
+    tag: 'batten-office-daily',
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%232E6B4A"/><text y=".9em" font-size="80" x="10">🏛</text></svg>'
+  });
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.savePerson();
+  if (e.key === 'Escape') window.hideAddForm();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+await maybeBootstrap();
+startListeners();
+updateDatePill();
+updateCountdown();
+initNotifications();
+setInterval(updateCountdown, 60_000);
+setInterval(updateDatePill, 60_000);
+</script>
+
+</body>
+</html>
